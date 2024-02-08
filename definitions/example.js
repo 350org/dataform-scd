@@ -8,6 +8,9 @@ const { updates, view } = scd("source_data_scd", {
   uniqueKey: "user_id",
   // A field that stores a timestamp or date of when the row was last changed.
   timestamp: "updated_at",
+  // An optional field that stores a record's creation time or date. Set this
+  // to tell the view to use this as the valid_from for the first record update.
+  creationTime: "created_at",
   // A field that stores the hash value of the fields that we want to track changes in. If you do not want to use the hash comparison, you may omit this field or set it to null
   hash: "hash_value",
   // The source table to build slowly changing dimensions from.
