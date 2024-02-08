@@ -16,12 +16,15 @@ module.exports = (
        (ctx) => `
     ${ctx.when(
           ctx.incremental(), `with ids_to_update as \
-        (select ${uniqueKey}, ${hash}  from ${ctx.ref(source)}\
+        (select ${uniqueKey}, ${hash} hash_value from ${ctx.ref(source)}\
         except distinct \
-        (select distinct ${uniqueKey}, first_value(${hash})\
-          over(${uniqueKey} order by ${timestamp} desc\
-            rows between unbounded preceding and unbounded following)\
-        from ${ctx.self()} group by ${uniqueKey}))`
+        (
+          SELECT early.${uniqueKey}, ${hash} AS hash_value
+          FROM ${self()} AS early
+          LEFT OUTER JOIN ${self()} AS late
+            ON (early.${uniqueKey} = late.${uniqueKey} AND early.${timestamp} < late.${timestamp})
+          WHERE late.${uniqueKey} IS NULL
+        ))`
       )}
       select * from ${ctx.ref(source)}
       ${ctx.when(
