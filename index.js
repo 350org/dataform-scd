@@ -3,7 +3,7 @@
  */
 module.exports = (
     name,
-    { uniqueKey, hash, timestamp, source, tags, incrementalConfig, columns = {} }
+    { uniqueKey, hash, timestamp, creationTime, source, tags, incrementalConfig, columns = {} }
 ) => {
   // Create an incremental table with just pure updates, for a full history of the table.
   const updates = publish(`${name}_updates`, {
@@ -49,10 +49,11 @@ module.exports = (
       (ctx) => `
   select
     *,
-    ${timestamp} as scd_valid_from,
-    lead(${timestamp}) over (partition by ${uniqueKey} order by ${timestamp} asc) as scd_valid_to
+    ${creationTime ? `IF(LAG(${timestamp}) OVER (updates_window) IS NULL, ${creationTime}, ${timestamp})` : timestamp} as scd_valid_from,
+    lead(${timestamp}) over (updates_window) as scd_valid_to
   from
     ${ctx.ref(updates.proto.target.schema, `${name}_updates`)}
+  WINDOW updates_window AS (partition by ${uniqueKey} order by ${timestamp} asc)
   `
   );
 
